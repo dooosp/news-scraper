@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT 뉴스 스크래퍼 & PPT 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .source-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .source-badge {
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            font-weight: bold;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+
+        .reset-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        .result-panel.active {
+            display: block;
+        }
+
+        .news-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .news-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .news-item.hot {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .news-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hot-badge {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .news-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+        }
+
+        .news-title a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: #667eea;
+        }
+
+        .news-sources {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .news-source-tag {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .news-source-tag.naver { background: #03c75a20; color: #03c75a; }
+        .news-source-tag.google { background: #4285f420; color: #4285f4; }
+        .news-source-tag.yonhap { background: #00418920; color: #004189; }
+        .news-source-tag.sbs { background: #0066b320; color: #0066b3; }
+
+        .news-summary {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .news-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .news-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 12px;
+            background: #667eea15;
+            border-radius: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .news-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .download-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .download-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 12px 25px;
+            margin: 5px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .download-btn.ppt {
+            background: #dc3545;
+        }
+
+        .download-btn.ppt:hover {
+            background: #c82333;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-number.hot {
+            color: #dc3545;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .reset-btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .news-title {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📰 오늘의 인기 뉴스</h1>
+            <p class="subtitle">멀티소스 인기 뉴스 수집 & 자동 PPT 생성</p>
+            <div class="source-badges">
+                <span class="source-badge">네이버 랭킹</span>
+                <span class="source-badge">구글 뉴스</span>
+                <span class="source-badge">연합뉴스</span>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button id="resetBtn" class="reset-btn">🔄 뉴스 새로고침 & PPT 생성</button>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>3개 소스에서 뉴스를 수집하는 중...</p>
+            </div>
+            <div id="message"></div>
+        </div>
+
+        <div id="resultPanel" class="result-panel">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="newsCount">0</div>
+                    <div class="stat-label">수집된 뉴스</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number hot" id="hotCount">0</div>
+                    <div class="stat-label">HOT 뉴스</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">📊</div>
+                    <div class="stat-label">PPT 생성 완료</div>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom: 20px; color: #333;">오늘의 IT 뉴스</h2>
+            <div id="newsList"></div>
+
+            <div class="download-section">
+                <div class="download-title">📥 생성된 파일 다운로드</div>
+                <div id="downloadLinks"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const resultPanel = document.getElementById('resultPanel');
+        const newsList = document.getElementById('newsList');
+        const downloadLinks = document.getElementById('downloadLinks');
+        const messageDiv = document.getElementById('message');
+        const newsCount = document.getElementById('newsCount');
+        const hotCount = document.getElementById('hotCount');
+
+        function getSourceClass(source) {
+            if (source.includes('네이버')) return 'naver';
+            if (source.includes('구글')) return 'google';
+            if (source.includes('연합')) return 'yonhap';
+            if (source.includes('SBS')) return 'sbs';
+            return '';
+        }
+
+        function renderNewsItem(news, index) {
+            const isHot = news.isHot;
+            const hotBadge = isHot ? '<span class="hot-badge">🔥 HOT</span>' : '';
+
+            // 출처 태그 생성
+            const sourceTags = news.sources ? news.sources.map(source =>
+                `<span class="news-source-tag ${getSourceClass(source)}">${source}</span>`
+            ).join('') : '';
+
+            // 링크 버튼 생성
+            let linksHtml = '';
+            if (news.links && news.links.length > 0) {
+                linksHtml = news.links.map(link =>
+                    `<a href="${link.url}" target="_blank" class="news-link" onclick="event.stopPropagation()">📰 ${link.source} 기사 보기</a>`
+                ).join('');
+            } else if (news.link) {
+                linksHtml = `<a href="${news.link}" target="_blank" class="news-link" onclick="event.stopPropagation()">📰 기사 보기</a>`;
+            }
+
+            // 첫 번째 링크 URL (카드 클릭 시 이동)
+            const firstLink = (news.links && news.links.length > 0) ? news.links[0].url : (news.link || '#');
+
+            return `
+                <div class="news-item ${isHot ? 'hot' : ''}" onclick="window.open('${firstLink}', '_blank')">
+                    <div class="news-header">
+                        ${hotBadge}
+                        <div class="news-title">${index + 1}. ${news.title}</div>
+                    </div>
+                    <div class="news-sources">${sourceTags}</div>
+                    ${news.summary ? `<div class="news-summary">${news.summary}</div>` : ''}
+                    <div class="news-links">${linksHtml}</div>
+                </div>
+            `;
+        }
+
+        resetBtn.addEventListener('click', async () => {
+            resetBtn.disabled = true;
+            loading.classList.add('active');
+            messageDiv.innerHTML = '';
+            resultPanel.classList.remove('active');
+
+            try {
+                const response = await fetch('/fetch-news', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    messageDiv.innerHTML = '<div class="message success">✅ ' + data.message + '</div>';
+
+                    // 통계 업데이트
+                    newsCount.textContent = data.headlines.length;
+                    const hotNewsCount = data.headlines.filter(n => n.isHot).length;
+                    hotCount.textContent = hotNewsCount;
+
+                    // 뉴스 목록 표시
+                    newsList.innerHTML = data.headlines.map((news, index) =>
+                        renderNewsItem(news, index)
+                    ).join('');
+
+                    // 다운로드 링크 표시
+                    downloadLinks.innerHTML = `
+                        <a href="/${data.files.mdFile}" download class="download-btn">
+                            📄 Markdown 다운로드
+                        </a>
+                        <a href="/${data.files.pptFile}" download class="download-btn ppt">
+                            📊 PowerPoint 다운로드
+                        </a>
+                    `;
+
+                    resultPanel.classList.add('active');
+                } else {
+                    messageDiv.innerHTML = '<div class="message error">❌ ' + data.message + '</div>';
+                }
+
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="message error">❌ 서버 연결 오류: ' + error.message + '</div>';
+            } finally {
+                resetBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('load', () => {
+            messageDiv.innerHTML = '<div class="message" style="background: #e7f3ff; color: #004085; border: 1px solid #b8daff;">💡 버튼을 클릭하여 오늘의 인기 뉴스를 수집하세요!</div>';
+        });
+    </script>
+</body>
+</html>
