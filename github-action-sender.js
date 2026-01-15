@@ -96,7 +96,7 @@ async function sendNewsEmail(headlines) {
 
     // 일반 뉴스 섹션
     htmlContent += `<div class="section-title">📋 주요 뉴스</div>`;
-    regularNews.slice(0, 10).forEach((news, index) => {
+    regularNews.forEach((news, index) => {
         const link = news.links && news.links.length > 0 ? news.links[0].url : '#';
         htmlContent += `
         <div class="news-item">
@@ -109,6 +109,15 @@ async function sendNewsEmail(headlines) {
     });
 
     htmlContent += `
+        </div>
+        <div style="text-align: center; padding: 20px; background: #f0f0f0;">
+            <a href="https://github.com/dooosp/news-scraper/actions/workflows/daily-news.yml"
+               style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px;
+                      font-weight: bold; font-size: 16px;">
+                🔄 최신 뉴스 새로고침
+            </a>
+            <p style="margin-top: 10px; font-size: 12px; color: #888;">GitHub에서 "Run workflow" 버튼을 눌러주세요</p>
         </div>
         <div class="footer">
             <p>이 이메일은 GitHub Actions에서 자동으로 발송되었습니다.</p>
