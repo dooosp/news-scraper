@@ -111,7 +111,7 @@ async function sendNewsEmail(headlines) {
     htmlContent += `
         </div>
         <div style="text-align: center; padding: 20px; background: #f0f0f0;">
-            <a href="https://my-worker.jangho1383.workers.dev"
+            <a href="https://news-trigger.jangho1383.workers.dev"
                style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                       color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px;
                       font-weight: bold; font-size: 16px;">
