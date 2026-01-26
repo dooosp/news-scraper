@@ -147,6 +147,109 @@ async function fetchYonhapNews() {
     }
 }
 
+// 4. 분석기사 (시사IN)
+async function fetchAnalysisNews() {
+    try {
+        console.log('  [시사IN] 분석기사 수집 중...');
+        const url = 'https://www.sisain.co.kr/rss/allArticle.xml';
+
+        const feed = await rssParser.parseURL(url);
+        const headlines = [];
+
+        feed.items.slice(0, 5).forEach(item => {
+            headlines.push({
+                title: item.title || '',
+                link: item.link || '',
+                summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+                source: '시사IN',
+                category: 'analysis'
+            });
+        });
+
+        console.log(`  [시사IN] ${headlines.length}개 수집 완료`);
+        return headlines;
+    } catch (error) {
+        console.error(`  [시사IN] 수집 실패: ${error.message}`);
+        // 폴백: 프레시안
+        try {
+            console.log('  [프레시안] 대체 소스로 수집 중...');
+            const fallbackUrl = 'https://www.pressian.com/rss/section/news';
+            const feed = await rssParser.parseURL(fallbackUrl);
+            const headlines = [];
+
+            feed.items.slice(0, 5).forEach(item => {
+                headlines.push({
+                    title: item.title || '',
+                    link: item.link || '',
+                    summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+                    source: '프레시안',
+                    category: 'analysis'
+                });
+            });
+
+            console.log(`  [프레시안] ${headlines.length}개 수집 완료`);
+            return headlines;
+        } catch (e) {
+            console.error(`  [프레시안] 수집 실패: ${e.message}`);
+            return [];
+        }
+    }
+}
+
+// 5. BBC 월드뉴스
+async function fetchBBCNews() {
+    try {
+        console.log('  [BBC] 월드뉴스 수집 중...');
+        const url = 'http://feeds.bbci.co.uk/news/world/rss.xml';
+
+        const feed = await rssParser.parseURL(url);
+        const headlines = [];
+
+        feed.items.slice(0, 5).forEach(item => {
+            headlines.push({
+                title: item.title || '',
+                link: item.link || '',
+                summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+                source: 'BBC',
+                category: 'global'
+            });
+        });
+
+        console.log(`  [BBC] ${headlines.length}개 수집 완료`);
+        return headlines;
+    } catch (error) {
+        console.error(`  [BBC] 수집 실패: ${error.message}`);
+        return [];
+    }
+}
+
+// 6. CNN 월드뉴스
+async function fetchCNNNews() {
+    try {
+        console.log('  [CNN] 월드뉴스 수집 중...');
+        const url = 'http://rss.cnn.com/rss/edition_world.rss';
+
+        const feed = await rssParser.parseURL(url);
+        const headlines = [];
+
+        feed.items.slice(0, 5).forEach(item => {
+            headlines.push({
+                title: item.title || '',
+                link: item.link || '',
+                summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+                source: 'CNN',
+                category: 'global'
+            });
+        });
+
+        console.log(`  [CNN] ${headlines.length}개 수집 완료`);
+        return headlines;
+    } catch (error) {
+        console.error(`  [CNN] 수집 실패: ${error.message}`);
+        return [];
+    }
+}
+
 // ===== 중복 검사 및 병합 로직 =====
 
 function calculateSimilarity(title1, title2) {
@@ -197,7 +300,8 @@ function mergeAndDeduplicate(allNews) {
                 summary: news.summary || '',
                 sources: [news.source],
                 links: news.link ? [{ source: news.source, url: news.link }] : [],
-                isHot: false
+                isHot: false,
+                category: news.category || 'domestic'
             });
         }
     });
@@ -220,16 +324,29 @@ function mergeAndDeduplicate(allNews) {
 // ===== 메인 수집 함수 =====
 
 async function fetchNaverITNews() {
-    console.log('\n📰 멀티소스 인기 뉴스 수집 시작...\n');
+    console.log('\n📰 멀티소스 뉴스 수집 시작...\n');
 
-    const [naverNews, googleNews, yonhapNews] = await Promise.all([
+    const [naverNews, googleNews, yonhapNews, analysisNews, bbcNews, cnnNews] = await Promise.all([
         fetchNaverNews(),
         fetchGoogleNews(),
-        fetchYonhapNews()
+        fetchYonhapNews(),
+        fetchAnalysisNews(),
+        fetchBBCNews(),
+        fetchCNNNews()
     ]);
 
-    const allNews = [...naverNews, ...googleNews, ...yonhapNews];
+    // 국내 뉴스
+    const domesticNews = [...naverNews, ...googleNews, ...yonhapNews];
+    // 분석 기사
+    const analysisArticles = [...analysisNews];
+    // 글로벌 뉴스
+    const globalNews = [...bbcNews, ...cnnNews];
+
+    const allNews = [...domesticNews, ...analysisArticles, ...globalNews];
     console.log(`\n📊 총 ${allNews.length}개 뉴스 수집 완료`);
+    console.log(`   - 국내: ${domesticNews.length}개`);
+    console.log(`   - 분석: ${analysisArticles.length}개`);
+    console.log(`   - 글로벌: ${globalNews.length}개`);
 
     const mergedNews = mergeAndDeduplicate(allNews);
 

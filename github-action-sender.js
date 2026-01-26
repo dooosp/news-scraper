@@ -28,7 +28,9 @@ async function sendNewsEmail(headlines) {
     });
 
     const hotNews = headlines.filter(h => h.isHot);
-    const regularNews = headlines.filter(h => !h.isHot);
+    const domesticNews = headlines.filter(h => !h.isHot && (!h.category || h.category === 'domestic'));
+    const analysisNews = headlines.filter(h => !h.isHot && h.category === 'analysis');
+    const globalNews = headlines.filter(h => !h.isHot && h.category === 'global');
 
     let htmlContent = `
     <!DOCTYPE html>
@@ -94,19 +96,55 @@ async function sendNewsEmail(headlines) {
         });
     }
 
-    // 일반 뉴스 섹션
-    htmlContent += `<div class="section-title">📋 주요 뉴스</div>`;
-    regularNews.forEach((news, index) => {
-        const link = news.links && news.links.length > 0 ? news.links[0].url : '#';
-        htmlContent += `
-        <div class="news-item">
-            <div class="news-title">
-                <a href="${link}" target="_blank">${index + 1}. ${news.title}</a>
+    // 국내 주요 뉴스 섹션
+    if (domesticNews.length > 0) {
+        htmlContent += `<div class="section-title">🇰🇷 국내 주요 뉴스</div>`;
+        domesticNews.forEach((news, index) => {
+            const link = news.links && news.links.length > 0 ? news.links[0].url : '#';
+            htmlContent += `
+            <div class="news-item">
+                <div class="news-title">
+                    <a href="${link}" target="_blank">${index + 1}. ${news.title}</a>
+                </div>
+                <div class="news-sources">출처: ${news.sources.join(', ')}</div>
             </div>
-            <div class="news-sources">출처: ${news.sources.join(', ')}</div>
-        </div>
-        `;
-    });
+            `;
+        });
+    }
+
+    // 분석 기사 섹션
+    if (analysisNews.length > 0) {
+        htmlContent += `<div class="section-title" style="color: #28a745; border-bottom-color: #28a745;">📊 심층 분석 기사</div>`;
+        analysisNews.forEach((news, index) => {
+            const link = news.links && news.links.length > 0 ? news.links[0].url : '#';
+            htmlContent += `
+            <div class="news-item" style="border-left-color: #28a745;">
+                <div class="news-title">
+                    <a href="${link}" target="_blank">${index + 1}. ${news.title}</a>
+                </div>
+                <div class="news-sources">출처: ${news.sources.join(', ')}</div>
+                ${news.summary ? `<div class="news-summary">${news.summary.substring(0, 150)}...</div>` : ''}
+            </div>
+            `;
+        });
+    }
+
+    // 글로벌 뉴스 섹션
+    if (globalNews.length > 0) {
+        htmlContent += `<div class="section-title" style="color: #17a2b8; border-bottom-color: #17a2b8;">🌍 글로벌 핫뉴스</div>`;
+        globalNews.forEach((news, index) => {
+            const link = news.links && news.links.length > 0 ? news.links[0].url : '#';
+            htmlContent += `
+            <div class="news-item" style="border-left-color: #17a2b8;">
+                <div class="news-title">
+                    <a href="${link}" target="_blank">${index + 1}. ${news.title}</a>
+                </div>
+                <div class="news-sources">출처: ${news.sources.join(', ')}</div>
+                ${news.summary ? `<div class="news-summary">${news.summary.substring(0, 150)}...</div>` : ''}
+            </div>
+            `;
+        });
+    }
 
     htmlContent += `
         </div>
@@ -121,7 +159,7 @@ async function sendNewsEmail(headlines) {
         </div>
         <div class="footer">
             <p>이 이메일은 GitHub Actions에서 자동으로 발송되었습니다.</p>
-            <p>수집 소스: 네이버 랭킹 | 구글 뉴스 | 연합뉴스</p>
+            <p>수집 소스: 네이버 | 구글 | 연합뉴스 | 시사IN | BBC | CNN</p>
         </div>
     </body>
     </html>
