@@ -21,11 +21,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd lib/anti-echo-chamber && npm ci
 
       - name: Send news email
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           GMAIL_RECIPIENT: ${{ secrets.GMAIL_RECIPIENT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node github-action-sender.js

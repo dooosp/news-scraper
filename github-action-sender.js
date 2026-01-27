@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { fetchNaverITNews } = require('./news-fetcher');
+const antiEcho = require('./lib/anti-echo-chamber');
 
 // 환경변수에서 설정 읽기 (GitHub Secrets)
 const CONFIG = {
@@ -31,6 +32,17 @@ async function sendNewsEmail(headlines) {
     const domesticNews = headlines.filter(h => !h.isHot && (!h.category || h.category === 'domestic'));
     const analysisNews = headlines.filter(h => !h.isHot && h.category === 'analysis');
     const globalNews = headlines.filter(h => !h.isHot && h.category === 'global');
+
+    // Anti-Echo-Chamber: 반대 관점 생성
+    let antiEchoSection = '';
+    try {
+        console.log('🎭 반대 관점 생성 중...');
+        const perspectives = await antiEcho.generateBatch(headlines, { maxItems: 3 });
+        antiEchoSection = antiEcho.templates.renderSection(perspectives);
+        console.log(`✅ ${perspectives.length}개 뉴스에 대한 반대 관점 생성 완료`);
+    } catch (error) {
+        console.log('⚠️ 반대 관점 생성 실패 (무시하고 계속):', error.message);
+    }
 
     let htmlContent = `
     <!DOCTYPE html>
@@ -144,6 +156,11 @@ async function sendNewsEmail(headlines) {
             </div>
             `;
         });
+    }
+
+    // Anti-Echo-Chamber 섹션 삽입
+    if (antiEchoSection) {
+        htmlContent += antiEchoSection;
     }
 
     htmlContent += `

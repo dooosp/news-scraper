@@ -1,0 +1,16 @@
+{
+  "name": "anti-echo-chamber",
+  "version": "1.0.0",
+  "description": "확증편향 방지 모듈 - 뉴스에 대한 반대 관점 생성",
+  "main": "index.js",
+  "scripts": {
+    "test": "node examples/usage.js"
+  },
+  "keywords": ["anti-echo-chamber", "critical-thinking", "news-analysis"],
+  "author": "Taeho",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^17.2.3"
+  }
+}
