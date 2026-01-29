@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node trigger-server.js",
     "server": "node server.js",
-    "fetch": "node fetch-news.js",
+    "fetch": "node src/main.js --no-mail --no-llm",
+    "send": "node src/main.js",
+    "send:no-llm": "node src/main.js --no-llm",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

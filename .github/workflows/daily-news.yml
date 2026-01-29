@@ -31,4 +31,4 @@ jobs:
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           GMAIL_RECIPIENT: ${{ secrets.GMAIL_RECIPIENT }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node github-action-sender.js
+        run: node src/main.js

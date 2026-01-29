@@ -1,4 +1,5 @@
 const express = require('express');
+const { escapeHtml } = require('./src/utils');
 const app = express();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -86,7 +87,7 @@ app.get('/send', async (req, res) => {
             <body>
                 <div class="card">
                     <h1>❌ 오류 발생</h1>
-                    <p>${error.message}</p>
+                    <p>${escapeHtml(error.message)}</p>
                 </div>
             </body>
             </html>
