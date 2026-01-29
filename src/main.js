@@ -119,7 +119,7 @@ async function runDigest(options = {}) {
             console.log('🎭 반대 관점 생성 중...');
             const perspectives = await antiEcho.generateBatch(articles, { maxItems: 3 });
             perspectives.forEach(p => {
-                const match = articles.find(a => a.title === p.title);
+                const match = articles.find(a => a.title === p.originalTitle);
                 if (match) match.counterView = p;
             });
             console.log(`✅ ${perspectives.length}개 반대 관점 생성 완료`);
