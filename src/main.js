@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { sources } = require('./sources');
+const { formatSources, normalizeSource } = require('./utils');
 const antiEcho = require('../lib/anti-echo-chamber');
 
 // ===== 상수 =====
@@ -10,6 +11,8 @@ const ARCHIVE_DIR = process.env.ARCHIVE_DIR || path.join(__dirname, '..', 'archi
 const TODAY_NEWS_PATH = process.env.TODAY_NEWS_PATH || path.join(os.homedir(), 'today_news.md');
 const REFRESH_URL = process.env.REFRESH_URL || 'https://news-trigger.jangho1383.workers.dev';
 const SIMILARITY_THRESHOLD = 0.4;
+const MAX_TOTAL = 15;
+const CATEGORY_MIN = { domestic: 4, analysis: 2, global: 5 }; // 카테고리별 최소 보장
 
 // ===== 중복 제거 =====
 
@@ -69,6 +72,40 @@ function mergeAndDeduplicate(allArticles) {
     return merged;
 }
 
+// ===== 스코어링 & 선별 =====
+
+function scoreArticle(article) {
+    let score = 0;
+    if (article.isHot) score += 3;
+    if (article.category === 'analysis') score += 1;
+    if (article.summary && article.summary.length > 30) score += 1;
+    score += Math.min(article.sources.length - 1, 2);
+    return score;
+}
+
+function selectTopArticles(articles, maxTotal) {
+    // 카테고리별 최소 보장 후 나머지 점수순 충원
+    const selected = [];
+    const pool = articles.map(a => ({ ...a, _score: scoreArticle(a) }));
+
+    for (const [cat, min] of Object.entries(CATEGORY_MIN)) {
+        const catItems = pool
+            .filter(a => a.category === cat && !selected.includes(a))
+            .sort((a, b) => b._score - a._score)
+            .slice(0, min);
+        selected.push(...catItems);
+    }
+
+    const remaining = pool
+        .filter(a => !selected.includes(a))
+        .sort((a, b) => b._score - a._score);
+    const slotsLeft = maxTotal - selected.length;
+    if (slotsLeft > 0) selected.push(...remaining.slice(0, slotsLeft));
+
+    // _score 제거 후 반환
+    return selected.map(({ _score, ...rest }) => rest);
+}
+
 // ===== 파이프라인 =====
 
 /**
@@ -109,11 +146,15 @@ async function runDigest(options = {}) {
     console.log(`\n📊 총 ${allArticles.length}개 뉴스 수집 (소스: ${activeSources.join(', ')})`);
 
     // 2. 중복 제거 + 병합
-    const articles = mergeAndDeduplicate(allArticles);
-    const hotCount = articles.filter(a => a.isHot).length;
-    console.log(`🔥 HOT 뉴스: ${hotCount}개 | 📋 최종: ${articles.length}개\n`);
+    const merged = mergeAndDeduplicate(allArticles);
+    console.log(`📋 병합 후: ${merged.length}개`);
 
-    // 3. Anti-Echo-Chamber (선택)
+    // 3. 스코어링 + 선별 (MAX_TOTAL 제한)
+    const articles = selectTopArticles(merged, MAX_TOTAL);
+    const hotCount = articles.filter(a => a.isHot).length;
+    console.log(`🔥 HOT: ${hotCount}개 | 📋 최종 선별: ${articles.length}개 (상위 ${MAX_TOTAL}개)\n`);
+
+    // 4. Anti-Echo-Chamber (선택)
     if (useLLM) {
         try {
             console.log('🎭 반대 관점 생성 중...');
@@ -128,7 +169,7 @@ async function runDigest(options = {}) {
         }
     }
 
-    // 4. 다이제스트 구성
+    // 5. 다이제스트 구성
     const now = new Date();
     const digest = {
         date: now.toISOString(),
@@ -141,12 +182,12 @@ async function runDigest(options = {}) {
         failures,
     };
 
-    // 5. 저장 (마크다운 + PPT)
+    // 6. 저장 (마크다운 + PPT)
     saveMarkdown(digest);
     const { saveResult, sendNewsEmail } = require('./services');
     await saveResult(digest);
 
-    // 6. 이메일 발송 (옵션)
+    // 7. 이메일 발송 (옵션)
     if (sendMail) {
         await sendNewsEmail(digest);
     }
@@ -163,16 +204,16 @@ function saveMarkdown(digest) {
     const dateFormat = digest.date.slice(0, 10);
     let md = `# 오늘의 인기 뉴스\n\n`;
     md += `**날짜:** ${digest.dateDisplay}\n\n`;
-    md += `**수집 소스:** ${digest.activeSources.join(', ')}\n\n---\n\n`;
+    md += `**수집 소스:** ${formatSources(digest.activeSources)}\n\n---\n\n`;
 
     digest.articles.forEach((a, i) => {
         const hot = a.isHot ? '🔥 **[HOT]** ' : '';
         md += `## ${i + 1}. ${hot}${a.title}\n\n`;
-        md += `**출처:** ${a.sources.join(', ')}\n\n`;
+        md += `**출처:** ${formatSources(a.sources)}\n\n`;
         if (a.summary) md += `**요약:** ${a.summary}\n\n`;
         if (a.links.length > 0) {
             md += `**링크:**\n`;
-            a.links.forEach(l => { md += `- [${l.source}](${l.url})\n`; });
+            a.links.forEach(l => { md += `- [${normalizeSource(l.source)}](${l.url})\n`; });
             md += '\n';
         }
         md += `---\n\n`;

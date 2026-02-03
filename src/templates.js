@@ -1,6 +1,6 @@
 const PptxGenJS = require('pptxgenjs');
 const antiEcho = require('../lib/anti-echo-chamber');
-const { escapeHtml } = require('./utils');
+const { escapeHtml, formatSources } = require('./utils');
 
 const REFRESH_URL = process.env.REFRESH_URL || 'https://news-trigger.jangho1383.workers.dev';
 
@@ -89,7 +89,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;line-height:1.6;color:#333;max-widt
     // 푸터 (활성 소스 동적 생성)
     html += `<div class="footer">
 <p>이 이메일은 자동으로 발송되었습니다.</p>
-<p>수집 소스: ${activeSources.join(' | ')}</p>
+<p>수집 소스: ${formatSources(activeSources)}</p>
 </div></body></html>`;
 
     return html;
@@ -107,7 +107,7 @@ function renderNewsItem(article, type, index) {
     html += `<div class="news-title">`;
     if (type === 'hot') html += `<span class="hot-badge">HOT</span> `;
     html += `<a href="${link}" target="_blank">${prefix}${escapeHtml(article.title)}</a></div>`;
-    html += `<div class="news-sources">출처: ${escapeHtml(article.sources.join(', '))}</div>`;
+    html += `<div class="news-sources">출처: ${escapeHtml(formatSources(article.sources))}</div>`;
     if (article.summary) {
         html += `<div class="news-summary">${escapeHtml(article.summary.substring(0, maxSummary))}...</div>`;
     }

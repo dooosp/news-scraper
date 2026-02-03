@@ -1,4 +1,5 @@
 const Parser = require('rss-parser');
+const { truncateSentence } = require('../utils');
 const rssParser = new Parser();
 
 const SOURCE_NAME = '연합뉴스';
@@ -17,7 +18,7 @@ async function fetch() {
         const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
             title: item.title || '',
             url: item.link || '',
-            summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
             source: SOURCE_NAME,
             category: CATEGORY,
         }));
@@ -32,7 +33,7 @@ async function fetch() {
         const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
             title: item.title || '',
             url: item.link || '',
-            summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
             source: FALLBACK_NAME,
             category: CATEGORY,
         }));

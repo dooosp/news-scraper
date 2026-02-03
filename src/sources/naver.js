@@ -61,8 +61,32 @@ async function fetch() {
         });
     }
 
+    // meta description 병렬 추출 (요약 보강)
+    await Promise.allSettled(articles.map(async (a) => {
+        try {
+            const res = await axios.get(a.url, {
+                headers: { 'User-Agent': 'Mozilla/5.0' },
+                timeout: 3000,
+                responseType: 'arraybuffer',
+            });
+            const html2 = Buffer.from(res.data).toString('utf-8');
+            const $2 = cheerio.load(html2);
+            const desc = $2('meta[property="og:description"]').attr('content')
+                || $2('meta[name="description"]').attr('content') || '';
+            if (desc) a.summary = truncateSentence(desc, 200);
+        } catch (_) { /* 실패 시 빈 요약 유지 */ }
+    }));
+
     console.log(`  [${SOURCE_NAME}] ${articles.length}개 수집 완료`);
     return articles;
+}
+
+function truncateSentence(text, maxLen) {
+    if (text.length <= maxLen) return text;
+    const cut = text.substring(0, maxLen);
+    const lastDot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('다.'), cut.lastIndexOf('요.'));
+    if (lastDot > maxLen * 0.5) return cut.substring(0, lastDot + 1);
+    return cut + '…';
 }
 
 module.exports = { name: SOURCE_NAME, category: CATEGORY, fetch };

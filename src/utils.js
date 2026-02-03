@@ -28,4 +28,44 @@ async function fetchWithRetry(fn, { retries = 2, backoff = 1000 } = {}) {
     }
 }
 
-module.exports = { escapeHtml, fetchWithRetry };
+/**
+ * 문장 단위로 절단 (중간에 잘리지 않도록)
+ * @param {string} text
+ * @param {number} maxLen
+ * @returns {string}
+ */
+function truncateSentence(text, maxLen) {
+    if (!text || text.length <= maxLen) return text || '';
+    const cut = text.substring(0, maxLen);
+    const lastEnd = Math.max(
+        cut.lastIndexOf('. '),
+        cut.lastIndexOf('다.'),
+        cut.lastIndexOf('요.'),
+        cut.lastIndexOf('음.')
+    );
+    if (lastEnd > maxLen * 0.5) return cut.substring(0, lastEnd + 1);
+    return cut + '…';
+}
+
+const SOURCE_DISPLAY = {
+    '네이버': '네이버뉴스',
+    '구글뉴스': '구글뉴스',
+    '연합뉴스': '연합뉴스',
+    '시사IN': '시사IN',
+    '프레시안': '프레시안',
+    'BBC': 'BBC',
+    'CNN': 'CNN',
+    'Guardian': 'Guardian',
+    'AP': 'AP통신',
+    'SBS': 'SBS뉴스',
+};
+
+function normalizeSource(name) {
+    return SOURCE_DISPLAY[name] || name;
+}
+
+function formatSources(sources) {
+    return sources.map(normalizeSource).join(' · ');
+}
+
+module.exports = { escapeHtml, fetchWithRetry, truncateSentence, normalizeSource, formatSources };

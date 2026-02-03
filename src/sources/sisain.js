@@ -1,4 +1,6 @@
 const Parser = require('rss-parser');
+const axios = require('axios');
+const { truncateSentence } = require('../utils');
 const rssParser = new Parser();
 
 const SOURCE_NAME = '시사IN';
@@ -14,14 +16,15 @@ async function fetch() {
         const url = 'https://www.sisain.co.kr/rss/allArticle.xml';
         const feed = await rssParser.parseURL(url);
 
-        const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
+        const candidates = feed.items.slice(0, MAX_ITEMS).map(item => ({
             title: item.title || '',
             url: item.link || '',
-            summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
             source: SOURCE_NAME,
             category: CATEGORY,
         }));
 
+        const articles = await filterValidLinks(candidates, SOURCE_NAME);
         console.log(`  [${SOURCE_NAME}] ${articles.length}개 수집 완료`);
         return articles;
     } catch (error) {
@@ -32,7 +35,7 @@ async function fetch() {
         const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
             title: item.title || '',
             url: item.link || '',
-            summary: item.contentSnippet ? item.contentSnippet.substring(0, 200) : '',
+            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
             source: FALLBACK_NAME,
             category: CATEGORY,
         }));
@@ -40,6 +43,22 @@ async function fetch() {
         console.log(`  [${FALLBACK_NAME}] ${articles.length}개 수집 완료`);
         return articles;
     }
+}
+
+async function filterValidLinks(articles, label) {
+    const results = await Promise.allSettled(
+        articles.map(a =>
+            axios.head(a.url, { timeout: 3000, maxRedirects: 3 })
+                .then(() => a)
+                .catch(() => null)
+        )
+    );
+    const valid = results
+        .map(r => r.status === 'fulfilled' ? r.value : null)
+        .filter(Boolean);
+    const dropped = articles.length - valid.length;
+    if (dropped > 0) console.log(`  [${label}] ${dropped}개 링크 404/무효 → 제외`);
+    return valid;
 }
 
 module.exports = { name: SOURCE_NAME, category: CATEGORY, fetch };

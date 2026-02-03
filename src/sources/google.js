@@ -1,4 +1,5 @@
 const Parser = require('rss-parser');
+const { truncateSentence } = require('../utils');
 const rssParser = new Parser();
 
 const SOURCE_NAME = '구글뉴스';
@@ -14,7 +15,7 @@ async function fetch() {
     const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
         title: item.title ? item.title.replace(/ - .*$/, '').trim() : '',
         url: item.link || '',
-        summary: item.contentSnippet || '',
+        summary: truncateSentence(item.contentSnippet || '', 200),
         source: SOURCE_NAME,
         category: CATEGORY,
     }));
