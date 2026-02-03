@@ -1,6 +1,6 @@
 const Parser = require('rss-parser');
 const { truncateSentence } = require('../utils');
-const rssParser = new Parser();
+const rssParser = new Parser({ timeout: 10000 });
 
 const SOURCE_NAME = '구글뉴스';
 const CATEGORY = 'domestic';

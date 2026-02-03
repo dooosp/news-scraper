@@ -1,18 +1,10 @@
 require('dotenv').config();
-const path = require('path');
 const fs = require('fs');
-const os = require('os');
+const path = require('path');
 const { sources } = require('./sources');
 const { formatSources, normalizeSource } = require('./utils');
 const antiEcho = require('../lib/anti-echo-chamber');
-
-// ===== 상수 =====
-const ARCHIVE_DIR = process.env.ARCHIVE_DIR || path.join(__dirname, '..', 'archive');
-const TODAY_NEWS_PATH = process.env.TODAY_NEWS_PATH || path.join(os.homedir(), 'today_news.md');
-const REFRESH_URL = process.env.REFRESH_URL || 'https://news-trigger.jangho1383.workers.dev';
-const SIMILARITY_THRESHOLD = 0.4;
-const MAX_TOTAL = 15;
-const CATEGORY_MIN = { domestic: 4, analysis: 2, global: 5 }; // 카테고리별 최소 보장
+const { ARCHIVE_DIR, TODAY_NEWS_PATH, SIMILARITY_THRESHOLD, MAX_TOTAL, CATEGORY_MIN } = require('./config');
 
 // ===== 중복 제거 =====
 

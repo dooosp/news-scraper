@@ -76,7 +76,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;line-height:1.6;color:#333;max-widt
         try {
             const section = antiEcho.templates.renderSection(withPerspective.map(a => a.counterView));
             html += section;
-        } catch (_) { /* 무시 */ }
+        } catch (e) { console.warn(`반대관점 렌더링 실패: ${e.message}`); }
     }
 
     // 새로고침 버튼

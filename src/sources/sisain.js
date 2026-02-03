@@ -1,7 +1,7 @@
 const Parser = require('rss-parser');
 const axios = require('axios');
 const { truncateSentence } = require('../utils');
-const rssParser = new Parser();
+const rssParser = new Parser({ timeout: 10000 });
 
 const SOURCE_NAME = '시사IN';
 const CATEGORY = 'analysis';

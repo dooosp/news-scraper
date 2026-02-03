@@ -66,7 +66,7 @@ async function fetch() {
         try {
             const res = await axios.get(a.url, {
                 headers: { 'User-Agent': 'Mozilla/5.0' },
-                timeout: 3000,
+                timeout: 5000,
                 responseType: 'arraybuffer',
             });
             const html2 = Buffer.from(res.data).toString('utf-8');
@@ -74,7 +74,7 @@ async function fetch() {
             const desc = $2('meta[property="og:description"]').attr('content')
                 || $2('meta[name="description"]').attr('content') || '';
             if (desc) a.summary = truncateSentence(desc, 200);
-        } catch (_) { /* 실패 시 빈 요약 유지 */ }
+        } catch (e) { console.warn(`  [네이버] 요약 추출 실패(${a.title.slice(0, 20)}): ${e.message}`); }
     }));
 
     console.log(`  [${SOURCE_NAME}] ${articles.length}개 수집 완료`);
