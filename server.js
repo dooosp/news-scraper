@@ -28,6 +28,23 @@ app.get('/send-email', async (req, res) => {
     }
 });
 
+app.get('/api/digest/latest', (req, res) => {
+    // 1. 메모리 캐시 우선
+    if (runDigest._latestDigest) {
+        return res.json(runDigest._latestDigest);
+    }
+    // 2. 파일 fallback
+    const fs = require('fs');
+    const digestPath = path.join(__dirname, 'archive', 'latest-digest.json');
+    if (fs.existsSync(digestPath)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(digestPath, 'utf8'));
+            return res.json(data);
+        } catch (_e) { /* fall through */ }
+    }
+    res.status(404).json({ error: '아직 수집된 다이제스트가 없습니다.' });
+});
+
 app.post('/fetch-news', async (req, res) => {
     try {
         console.log('\n=== 새로운 뉴스 수집 요청 ===');

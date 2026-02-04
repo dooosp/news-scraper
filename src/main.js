@@ -174,6 +174,12 @@ async function runDigest(options = {}) {
         failures,
     };
 
+    // 5b. JSON 저장 + 메모리 캐시 (intelligence-loop용)
+    const digestJsonPath = path.join(ARCHIVE_DIR, 'latest-digest.json');
+    fs.writeFileSync(digestJsonPath, JSON.stringify(digest, null, 2), 'utf8');
+    console.log(`✓ 다이제스트 JSON 저장: ${digestJsonPath}`);
+    runDigest._latestDigest = digest;
+
     // 6. 저장 (마크다운 + PPT)
     saveMarkdown(digest);
     const { saveResult, sendNewsEmail } = require('./services');
