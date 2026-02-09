@@ -175,6 +175,7 @@ async function runDigest(options = {}) {
     };
 
     // 5b. JSON 저장 + 메모리 캐시 (intelligence-loop용)
+    if (!fs.existsSync(ARCHIVE_DIR)) fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
     const digestJsonPath = path.join(ARCHIVE_DIR, 'latest-digest.json');
     fs.writeFileSync(digestJsonPath, JSON.stringify(digest, null, 2), 'utf8');
     console.log(`✓ 다이제스트 JSON 저장: ${digestJsonPath}`);
