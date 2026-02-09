@@ -3,7 +3,7 @@ const path = require('path');
 const { runDigest } = require('./src/main');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.static('public'));
 app.use('/archive', express.static('archive'));
