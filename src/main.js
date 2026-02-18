@@ -1,4 +1,5 @@
-require('dotenv').config();
+const { loadEnv } = require('config-loader');
+loadEnv({ name: 'news-scraper' });
 const fs = require('fs');
 const path = require('path');
 const { sources } = require('./sources');
@@ -221,6 +222,10 @@ function saveMarkdown(digest) {
     const archivePath = path.join(ARCHIVE_DIR, `news_${dateFormat}.md`);
     fs.writeFileSync(archivePath, md, 'utf8');
     console.log(`✓ 아카이브 저장: ${archivePath}`);
+
+    const digestDatePath = path.join(ARCHIVE_DIR, `digest_${dateFormat}.json`);
+    fs.writeFileSync(digestDatePath, JSON.stringify(digest, null, 2), 'utf8');
+    console.log(`✓ 날짜별 다이제스트 JSON: ${digestDatePath}`);
 
     fs.writeFileSync(TODAY_NEWS_PATH, md, 'utf8');
     console.log(`✓ 최신 파일 저장: ${TODAY_NEWS_PATH}`);

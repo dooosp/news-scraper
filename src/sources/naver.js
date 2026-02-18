@@ -1,27 +1,33 @@
-const axios = require('axios');
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
+const { httpGet } = require('http-client');
+const { truncateSentence } = require('../utils');
 
 const SOURCE_NAME = '네이버';
 const CATEGORY = 'domestic';
 const MAX_ITEMS = 7;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 /** @returns {Promise<import('../types').Article[]>} */
 async function fetch() {
     console.log(`  [${SOURCE_NAME}] 랭킹 뉴스 수집 중...`);
     const url = 'https://news.naver.com/main/ranking/popularDay.naver';
 
-    const response = await axios.get(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        timeout: 10000,
-        responseType: 'arraybuffer',
+    // arraybuffer for EUC-KR support — native fetch
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    const response = await globalThis.fetch(url, {
+        headers: { 'User-Agent': UA },
+        signal: controller.signal,
     });
+    clearTimeout(timer);
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    const contentType = response.headers['content-type'] || '';
+    const contentType = response.headers.get('content-type') || '';
     const isEucKr = contentType.includes('euc-kr') || contentType.includes('EUC-KR');
     const html = isEucKr
-        ? iconv.decode(Buffer.from(response.data), 'EUC-KR')
-        : Buffer.from(response.data).toString('utf-8');
+        ? iconv.decode(buffer, 'EUC-KR')
+        : buffer.toString('utf-8');
 
     const $ = cheerio.load(html);
     const articles = [];
@@ -64,12 +70,13 @@ async function fetch() {
     // meta description 병렬 추출 (요약 보강)
     await Promise.allSettled(articles.map(async (a) => {
         try {
-            const res = await axios.get(a.url, {
+            const html2 = await httpGet(a.url, {
                 headers: { 'User-Agent': 'Mozilla/5.0' },
                 timeout: 5000,
-                responseType: 'arraybuffer',
+                parseJson: false,
+                retries: 1,
+                label: 'naver-meta'
             });
-            const html2 = Buffer.from(res.data).toString('utf-8');
             const $2 = cheerio.load(html2);
             const desc = $2('meta[property="og:description"]').attr('content')
                 || $2('meta[name="description"]').attr('content') || '';
@@ -79,14 +86,6 @@ async function fetch() {
 
     console.log(`  [${SOURCE_NAME}] ${articles.length}개 수집 완료`);
     return articles;
-}
-
-function truncateSentence(text, maxLen) {
-    if (text.length <= maxLen) return text;
-    const cut = text.substring(0, maxLen);
-    const lastDot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('다.'), cut.lastIndexOf('요.'));
-    if (lastDot > maxLen * 0.5) return cut.substring(0, lastDot + 1);
-    return cut + '…';
 }
 
 module.exports = { name: SOURCE_NAME, category: CATEGORY, fetch };

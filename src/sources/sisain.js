@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const axios = require('axios');
+const { httpRequest } = require('http-client');
 const { truncateSentence } = require('../utils');
 const rssParser = new Parser({ timeout: 10000 });
 
@@ -48,7 +48,7 @@ async function fetch() {
 async function filterValidLinks(articles, label) {
     const results = await Promise.allSettled(
         articles.map(a =>
-            axios.head(a.url, { timeout: 3000, maxRedirects: 3 })
+            httpRequest(a.url, { method: 'HEAD', timeout: 3000, retries: 1, parseJson: false, label: 'link-check' })
                 .then(() => a)
                 .catch(() => null)
         )
