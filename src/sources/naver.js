@@ -1,6 +1,6 @@
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
-const { httpGet } = require('http-client');
+const { httpGet } = require('../../lib/shared/http-client');
 const { truncateSentence } = require('../utils');
 
 const SOURCE_NAME = '네이버';

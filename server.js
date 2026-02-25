@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { createServer, startServer } = require('server-base');
+const { createServer, startServer } = require('./lib/shared/server-base');
 const { runDigest } = require('./src/main');
 const { successPage, errorPage } = require('./src/templates/server-responses');
 

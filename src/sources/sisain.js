@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const { httpRequest } = require('http-client');
+const { httpRequest } = require('../../lib/shared/http-client');
 const { truncateSentence } = require('../utils');
 const rssParser = new Parser({ timeout: 10000 });
 

@@ -1,4 +1,4 @@
-const { loadEnv } = require('config-loader');
+const { loadEnv } = require('../lib/shared/config-loader');
 loadEnv({ name: 'news-scraper' });
 const fs = require('fs');
 const path = require('path');

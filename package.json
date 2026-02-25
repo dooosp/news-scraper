@@ -17,17 +17,14 @@
   "type": "commonjs",
   "dependencies": {
     "cheerio": "^1.1.2",
-    "config-loader": "file:../shared-libs/config-loader",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "http-client": "file:../shared-libs/http-client",
     "iconv-lite": "^0.7.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "pptxgenjs": "^4.0.1",
-    "rss-parser": "^3.13.0",
-    "server-base": "file:../shared-libs/server-base"
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "eslint": "^9.39.2",
