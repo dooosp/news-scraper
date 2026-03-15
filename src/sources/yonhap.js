@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const { truncateSentence } = require('../utils');
+const { normalizeNewsFeedItem } = require('../normalizer/article-normalizer');
 const rssParser = new Parser({ timeout: 10000 });
 
 const SOURCE_NAME = '연합뉴스';
@@ -15,13 +15,12 @@ async function fetch() {
         const url = 'https://www.yonhapnewstv.co.kr/browse/feed/';
         const feed = await rssParser.parseURL(url);
 
-        const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
-            title: item.title || '',
-            url: item.link || '',
-            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
-            source: SOURCE_NAME,
-            category: CATEGORY,
-        }));
+        const articles = feed.items
+            .slice(0, MAX_ITEMS)
+            .map(item => normalizeNewsFeedItem(item, {
+                source: SOURCE_NAME,
+                category: CATEGORY,
+            }));
 
         console.log(`  [${SOURCE_NAME}] ${articles.length}개 수집 완료`);
         return articles;
@@ -30,13 +29,12 @@ async function fetch() {
         console.log(`  [${FALLBACK_NAME}] 대체 소스로 수집 중...`);
 
         const feed = await rssParser.parseURL(FALLBACK_URL);
-        const articles = feed.items.slice(0, MAX_ITEMS).map(item => ({
-            title: item.title || '',
-            url: item.link || '',
-            summary: item.contentSnippet ? truncateSentence(item.contentSnippet, 200) : '',
-            source: FALLBACK_NAME,
-            category: CATEGORY,
-        }));
+        const articles = feed.items
+            .slice(0, MAX_ITEMS)
+            .map(item => normalizeNewsFeedItem(item, {
+                source: FALLBACK_NAME,
+                category: CATEGORY,
+            }));
 
         console.log(`  [${FALLBACK_NAME}] ${articles.length}개 수집 완료`);
         return articles;

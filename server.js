@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { createServer, startServer } = require('./lib/shared/server-base');
-const { runDigest } = require('./src/main');
+const newsOrchestrator = require('./src/orchestrator/news-orchestrator');
 const { successPage, errorPage } = require('./src/templates/server-responses');
 
 const PORT = process.env.PORT || 3100;
@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
 app.get('/send-email', async (req, res) => {
     try {
         console.log('\n=== 이메일 발송 요청 ===');
-        await runDigest({ sendMail: true, useLLM: true });
+        await newsOrchestrator.runDigest({ sendMail: true, useLLM: true });
         res.send(successPage());
     } catch (error) {
         console.error('이메일 발송 실패:', error);
@@ -49,8 +49,8 @@ app.get('/send-email', async (req, res) => {
 });
 
 app.get('/api/digest/latest', (req, res) => {
-    if (runDigest._latestDigest) {
-        return res.json(runDigest._latestDigest);
+    if (newsOrchestrator.runDigest._latestDigest) {
+        return res.json(newsOrchestrator.runDigest._latestDigest);
     }
     const digestPath = path.join(ARCHIVE_DIR, 'latest-digest.json');
     if (fs.existsSync(digestPath)) {
@@ -65,7 +65,7 @@ app.get('/api/digest/latest', (req, res) => {
 app.post('/fetch-news', async (req, res) => {
     try {
         console.log('\n=== 새로운 뉴스 수집 요청 ===');
-        const digest = await runDigest({ sendMail: false, useLLM: false });
+        const digest = await newsOrchestrator.runDigest({ sendMail: false, useLLM: false });
         res.json({
             success: true,
             message: '뉴스가 성공적으로 수집되었습니다!',

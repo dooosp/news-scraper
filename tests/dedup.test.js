@@ -1,20 +1,8 @@
 const assert = require('node:assert');
 const { describe, it } = require('node:test');
-
-// main.js에서 함수 직접 import 불가 → 같은 로직으로 독립 테스트
-// 향후 리팩토링 시 별도 모듈로 분리 가능
-
-function calculateSimilarity(title1, title2) {
-    const normalize = (str) => str.toLowerCase()
-        .replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '')
-        .split(/\s+/)
-        .filter(w => w.length > 1);
-    const words1 = normalize(title1);
-    const words2 = normalize(title2);
-    if (words1.length === 0 || words2.length === 0) return 0;
-    const common = words1.filter(w => words2.includes(w));
-    return (common.length * 2) / (words1.length + words2.length);
-}
+const { calculateSimilarity } = require('../src/deduper/article-deduper');
+const { scoreArticle } = require('../src/ranker/article-ranker');
+const { selectTopArticles } = require('../src/selector/article-selector');
 
 describe('calculateSimilarity', () => {
     it('동일한 제목은 1.0', () => {
@@ -48,15 +36,6 @@ describe('calculateSimilarity', () => {
 });
 
 describe('scoreArticle', () => {
-    function scoreArticle(article) {
-        let score = 0;
-        if (article.isHot) score += 3;
-        if (article.category === 'analysis') score += 1;
-        if (article.summary && article.summary.length > 30) score += 1;
-        score += Math.min(article.sources.length - 1, 2);
-        return score;
-    }
-
     it('HOT 기사는 +3점', () => {
         const score = scoreArticle({ isHot: true, category: 'domestic', sources: ['A'], summary: '' });
         assert.strictEqual(score, 3);
@@ -72,5 +51,22 @@ describe('scoreArticle', () => {
     it('복수 소스는 최대 +2점', () => {
         const score = scoreArticle({ isHot: false, category: 'domestic', sources: ['A', 'B', 'C', 'D'], summary: '' });
         assert.strictEqual(score, 2);
+    });
+});
+
+describe('selectTopArticles', () => {
+    it('카테고리 최소 보장 후 나머지를 점수순으로 채운다', () => {
+        const selected = selectTopArticles([
+            { title: 'A', category: 'domestic', isHot: true, sources: ['A'], summary: '' },
+            { title: 'B', category: 'tech', isHot: false, sources: ['A', 'B'], summary: 'x'.repeat(40) },
+            { title: 'C', category: 'economy', isHot: false, sources: ['A'], summary: '' },
+            { title: 'D', category: 'global', isHot: false, sources: ['A'], summary: '' },
+            { title: 'E', category: 'analysis', isHot: false, sources: ['A'], summary: '' },
+            { title: 'F', category: 'tech', isHot: true, sources: ['A', 'B'], summary: 'x'.repeat(40) },
+        ], 3, { domestic: 1, tech: 1, economy: 0, global: 0, analysis: 0 });
+
+        assert.strictEqual(selected.length, 3);
+        assert.strictEqual(selected[0].title, 'A');
+        assert.strictEqual(selected[1].title, 'F');
     });
 });
